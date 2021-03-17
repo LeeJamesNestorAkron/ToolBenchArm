@@ -49,7 +49,7 @@ void setup()
 
 void loop()
 {
-    Serial.println(" vscode thing started");
+    
   for (int i = 0; i < 6; i++)
   {
 
