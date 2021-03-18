@@ -9,23 +9,25 @@ Servo servo_base;
 Servo servo_elbow;
 ramp Ramp;
 const int num_Readings = 100;
-const int side;
 uint8_t baseReadings[num_Readings];
 int baseReadIndex = 0;
 int baseTotal = 0;
 int baseAverage = 0;
 int baseAngle = 90;
+const int baseArmLength = 108;
 uint8_t elbowReadings[num_Readings];
 int elbowReadIndex = 0;
 int elbowTotal = 0;
 int elbowAverage = 0;
 int elbowAngle = 90;
+const int elbowArmLength = 72;
 
-int pointListX[] = {20, 25, 35, 40,45,50};
-int pointListY[] = {5, 5, 5, 5,5,5};
+//int pointListX[] = {100, 100, 60, 40};
+//int pointListY[] = {100, 50, 60, 20};
+int pointListX[] = {50, 100, 50, 10};
+int pointListY[] = {150, 100, 50, 100};
 
-
-void armBaseRunning(double radius);
+void armBaseRunning(double radius, int x, int y);
 void armElbowRunning(double radius);
 int angleGen(int x);
 bool manualControl = false;
@@ -50,23 +52,26 @@ void setup()
 void loop()
 {
     
-  for (int i = 0; i < 6; i++)
+  for (int i = 0; i < 4; i++)
   {
 
-    double pointRadius = sqrt(((pointListX[i] * pointListX[i])) + (pointListY[i] * pointListY[i]));
-    if (pointRadius <= 120)
-    {
-      armBaseRunning(pointRadius);
-
+    double pointRadius = sqrt(sq(pointListX[i]) + sq(pointListY[i]));
+    Serial.print("The Calculated R value: ");
+     Serial.print(pointRadius);
+  
+      armBaseRunning(pointRadius, pointListX[i], pointListY[i] );
+     
       armElbowRunning(pointRadius);
-       delay(500);
-    }
+       delay(1000);
+    
    
   }
 }
 
-void armBaseRunning(double radius)
+void armBaseRunning(double radius, int x ,int y)
 {
+  Serial.println("received r value =");
+  Serial.println(radius);
   if (manualControl == true)
   {
     baseTotal = baseTotal - baseReadings[baseReadIndex];
@@ -81,11 +86,20 @@ void armBaseRunning(double radius)
     baseAverage = baseTotal / num_Readings;
     int baseAngle = angleGen(baseAverage);
   }
-  double baseAngle = (acos(((radius * radius)) / ( radius * 120)))* (180/3.14);
+  double elbowAngle = (acos((sq(baseArmLength)+sq(elbowArmLength)-sq(radius)) / ( baseArmLength * 2 * elbowArmLength)))* (180/3.14);
   
+
+  double Oac = (acos((sq(elbowArmLength)+sq(radius)-sq(baseArmLength)) / ( elbowArmLength * 2 * radius)))* (180/3.14);
   Serial.println("executing base");
-   Serial.println(radius);
-  Serial.println(baseAngle);
+
+  double Obb = atan(x/y) * 180/3.14;
+  Serial.println(Obb);
+  double Oab = 180 - elbowAngle - Oac;
+  Serial.println(Oab);
+  double baseAngle = Oab + Obb;
+  
+   Serial.println("baseAngle =");
+  Serial.print(baseAngle);
   //servo_base.write(Ramp.go(baseAngle,1000));
   servo_base.write(baseAngle);
 }
@@ -107,10 +121,9 @@ void armElbowRunning(double radius)
     elbowAverage = elbowTotal / num_Readings;
     int elbowAngle = angleGen(elbowAverage);
   }
-  double elbowAngle = (acos(((7200) - (radius * radius)) / (7200))) * (180/3.14);
-    Serial.println("executing arm");
-    Serial.println(radius);
-  Serial.println(elbowAngle);
+  double elbowAngle = (acos((sq(baseArmLength)+sq(elbowArmLength)-sq(radius)) / ( baseArmLength * 2 * elbowArmLength)))* (180/3.14);
+    Serial.println("elbowAngle =");
+  Serial.print(elbowAngle);
   //servo_elbow.write(Ramp.go(elbowAngle,1000));
   servo_elbow.write(elbowAngle);
 }
